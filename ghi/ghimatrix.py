@@ -82,22 +82,42 @@ async def _sendMessages(pool, messages) -> None:
         client.user_id = config["user_id"]
         client.device_id = config["device_id"]
 
-        for room_id in rooms:
-            await client.join(room_id)
-            if room_id[0] != "!":
-                response = await client.room_resolve_alias(room_id)
+        # synchronize first
+        logging.info(f"Preparing to send to matrix. Synchronizing with homeserver {config['homeserver']}")
+        await client.sync()
 
-                if isinstance(response, RoomResolveAliasError):
-                    logging.info(f"Error looking up alias for {room_id}: {response}")
-                    return {
-                        "statusCode": 500,
-                        "body": json.dumps({
-                            "success": False,
-                            "message": "An error happened while sending messages to Matrix"
-                        })
-                    }
+        for room_spec in rooms:
+            room_id = None
+            if room_spec[0] != "!":
+                # iterate over current rooms, see if we're already in there
+                in_room = False
+                for other_room_id, other_room in client.rooms.items():
+                    if other_room.canonical_alias == room_spec: # we're already in this room?
+                        logging.info(f'Already in room {room_spec} with room id {other_room_id}')
+                        in_room = True
+                        room_id = other_room_id
+                
+                if not in_room:
+                    # if not, try to join it and look up the alias
+                    logging.info(f'Trying to join room {room_spec}')
+                    await client.join(room_spec)
+                    response = await client.room_resolve_alias(room_sprc)
 
-                room_id = response.room_id
+                    if isinstance(response, RoomResolveAliasError):
+                        logging.info(f"Error looking up alias for {room_spec}: {response}")
+                        return {
+                            "statusCode": 500,
+                            "body": json.dumps({
+                                "success": False,
+                                "message": "An error happened while sending messages to Matrix"
+                            })
+                        }
+
+                    room_id = response.room_id
+                    logging.info(f'Succesfully joined room and retrieved room id {room_id}')
+            else:
+                # we've been passed a ready-to-use room id
+                room_id = room_spec
 
             for message in messages:
                 await client.room_send(
