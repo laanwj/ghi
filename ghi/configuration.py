@@ -112,7 +112,7 @@ def getConfiguration():
 
     try:
         logging.info("Found configuration file at '%s'" % configFilePath)
-        config = yaml.load(readFile(configFilePath))
+        config = yaml.load(readFile(configFilePath), Loader=yaml.FullLoader)
     except yaml.YAMLError as e:
         logging.error("There was a problem parsing configuration file.")
         logging.error(e)

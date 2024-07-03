@@ -24,6 +24,8 @@ def createCreds(resp: LoginResponse, homeserver, matrixSecFile) -> None:
         resp {LoginResponse} -- the successful client login response.
         homeserver -- URL of homeserver, e.g. "https://matrix.example.org"
     """
+    # make the credentials directory if necessary
+    os.makedirs(os.path.dirname(matrixSecFile), exist_ok=True)
     # open the config file in write-mode
     with open(matrixSecFile, "w") as f:
         # write the login details to disk
@@ -101,7 +103,7 @@ async def _sendMessages(pool, messages) -> None:
                     # if not, try to join it and look up the alias
                     logging.info(f'Trying to join room {room_spec}')
                     await client.join(room_spec)
-                    response = await client.room_resolve_alias(room_sprc)
+                    response = await client.room_resolve_alias(room_spec)
 
                     if isinstance(response, RoomResolveAliasError):
                         logging.info(f"Error looking up alias for {room_spec}: {response}")
