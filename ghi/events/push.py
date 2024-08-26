@@ -70,7 +70,8 @@ def Push(payload, poolRepos, shorten):
             "statusCode": 200,
             "ircMessages": [ircMessage],
             "mastMessages": [mastMessage],
-            "matrixMessages": [matrixMessage]
+            "matrixMessages": [matrixMessage],
+            "nostrMessages": [],
         }
 
     else:
@@ -225,5 +226,6 @@ def Push(payload, poolRepos, shorten):
             "statusCode": 200,
             "ircMessages": ircMessages,
             "mastMessages": mastMessages,
-            "matrixMessages": matrixMessages
+            "matrixMessages": matrixMessages,
+            "nostrMessages": [],
         }

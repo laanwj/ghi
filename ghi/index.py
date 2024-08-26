@@ -10,6 +10,7 @@ from ghilogging import setup_server_logging
 from irc import sendMessages as sendIrcMessages
 from ghimastodon import sendToots
 from ghimatrix import sendMessages as sendMatrixMessages
+from ghinostr import sendMessages as sendNostrMessages
 from validation import validatePayload
 from __init__ import __version__
 
@@ -131,11 +132,13 @@ def handler(event, context=None, sysd=None):
 
         githubPayload = json.loads(githubPayload)
 
+        isMerge = False
         if githubEvent == "pull_request":
             if not (githubPayload["action"] == "closed" and githubPayload["pull_request"]["merged"]):
                 mastAppliedMergeFilter = pool["pool"].mastMergeFilter
             else:
                 mastAppliedMergeFilter = False
+                isMerge = True
         else:
             mastAppliedMergeFilter = pool["pool"].mastMergeFilter
 
@@ -166,6 +169,20 @@ def handler(event, context=None, sysd=None):
                 matrixResult = "Successfully notified Matrix."
                 outletChecks.append("Matrix")
             logging.info(matrixResult)
+
+        if "nostr" in pool["pool"].outlets and isMerge:
+            logging.debug("Nostr Messages:")
+            logging.debug(getMessages["nostrMessages"])
+
+            # Send messages to the designated Nostr relays
+            sendToNostr = sendNostrMessages(pool["pool"], getMessages["nostrMessages"])
+            if sendToNostr["statusCode"] != 200:
+                failure = True
+                nostrResult = "Something went wrong while trying to notify Nostr."
+            else:
+                nostrResult = "Successfully notified Nostr."
+                outletChecks.append("Nostr")
+            logging.info(nostrResult)
 
         if "IRC" in outletChecks or not mastAppliedMergeFilter or "Matrix" in outletChecks and not failure:
             result = composeResultMessage(outletChecks)

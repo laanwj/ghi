@@ -54,6 +54,16 @@ def PullRequest(payload, shorten):
             url    = url
         )
 
+        nostrMessage = (
+                "[{repo}] {action} PR from {user}: {title} {url}"
+        ).format(
+            repo   = payload["pull_request"]["base"]["repo"]["name"],
+            action = action.capitalize(),
+            user   = payload["pull_request"]["user"]["login"],
+            title  = payload["pull_request"]["title"],
+            url    = url
+        )
+
         matrixMessage = (
             '[<font color="fuchsia">{repo}</font>] <font color="gray">{user}</font> <b>{action}</b> pull request <b>#{number}</b>: {title} '
             '(<font color="purple">{baseBranch}</font>...<font color="purple">{headBranch}</font>) <font color="navy"><u>{url}</u></font>'
@@ -72,7 +82,8 @@ def PullRequest(payload, shorten):
             "statusCode": 200,
             "ircMessages": [ircMessage],
             "mastMessages": [mastMessage],
-            "matrixMessages": [matrixMessage]
+            "matrixMessages": [matrixMessage],
+            "nostrMessages": [nostrMessage],
         }
 
     else:

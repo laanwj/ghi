@@ -3,7 +3,7 @@ import logging
 import os
 import yaml
 
-SUPPORTED_OUTLETS = ["irc", "mastodon", "matrix"]
+SUPPORTED_OUTLETS = ["irc", "mastodon", "matrix", "nostr"]
 MATRIX_DEVICE_ID = "Ghi-Matrix-Bot"
 
 class Pool(object):
@@ -11,7 +11,8 @@ class Pool(object):
 
     def __init__(self, name, outlets, repos, shorten, ircHost, ircPort, ircSsl, ircNick, ircPassword, ircChannels,\
                  mastInstance, mastUser, mastPassword, mastSecPath, mastAppName, mastMergeFilter,\
-                 matrixUser, matrixPassword, matrixServer, matrixRooms, matrixSecPath, matrixDevId):
+                 matrixUser, matrixPassword, matrixServer, matrixRooms, matrixSecPath, matrixDevId,
+                 nostrRelays, nostrPrivKey):
         self.name = name
         self.outlets = outlets
         self.repos = repos
@@ -34,6 +35,8 @@ class Pool(object):
         self.matrixRooms = matrixRooms
         self.matrixSecPath = matrixSecPath
         self.matrixDevId = matrixDevId
+        self.nostrRelays = nostrRelays
+        self.nostrPrivKey = nostrPrivKey
 
 
     def containsRepo(self, repo):
@@ -53,7 +56,8 @@ class GlobalConfig(object):
 
     def __init__(self, ircHost, ircPort, ircSsl, ircNick, ircPassword, mastInstance, mastUser,\
                  mastPassword, mastSecPath, mastAppName, mastMergeFilter, shorten, verify, outlets,\
-                 matrixUser, matrixPassword, matrixServer, matrixSecPath, matrixDevId):
+                 matrixUser, matrixPassword, matrixServer, matrixSecPath, matrixDevId,
+                 nostrRelays, nostrPrivKey):
         self.ircHost = ircHost
         self.ircPort = ircPort
         self.ircSsl = ircSsl
@@ -73,6 +77,8 @@ class GlobalConfig(object):
         self.matrixServer = matrixServer
         self.matrixSecPath = matrixSecPath
         self.matrixDevId = matrixDevId
+        self.nostrRelays = nostrRelays
+        self.nostrPrivKey = nostrPrivKey
 
 
 def getConfiguration():
@@ -298,6 +304,24 @@ def getConfiguration():
             globalMatrixSecPath = None
             globalMatrixDevId = None
 
+        if "nostr" in globalConfig:
+            if "relays" in globalConfig["nostr"]:
+                globalNostrRelays = globalConfig["nostr"]["relays"]
+                if type(globalNostrRelays) is not list:
+                    raise TypeError("'relays' is not a list")
+            else:
+                globalNostrRelays = None
+
+            if "privkey" in globalConfig["nostr"]:
+                globalNostrPrivKey = globalConfig["nostr"]["privkey"]
+                if type(globalNostrPrivKey) is not str:
+                    raise TypeError("'privkey' is not a string")
+            else:
+                globalNostrPrivKey = None
+        else:
+            globalNostrRelays = None
+            globalNostrPrivKey = None
+
         if "github" in globalConfig:
             if "shorten_url" in globalConfig["github"]:
                 globalShorten = globalConfig["github"]["shorten_url"]
@@ -353,6 +377,8 @@ def getConfiguration():
             matrixServer    = globalMatrixServer,
             matrixSecPath   = globalMatrixSecPath,
             matrixDevId     = globalMatrixDevId,
+            nostrRelays     = globalNostrRelays,
+            nostrPrivKey    = globalNostrPrivKey,
             shorten         = globalShorten,
             verify          = globalVerify,
             outlets         = globalGeneratedOutlets
@@ -721,6 +747,28 @@ def getConfiguration():
                 else:
                     matrixDevId = MATRIX_DEVICE_ID
 
+            if "nostr" in generatedOutlets:
+                if "nostr" in pool and "relays" in pool["nostr"]:
+                    nostrRelays = pool["nostr"]["relays"]
+                elif globalSettings.nostrRelays:
+                    nostrRelays = globalSettings.nostrRelays
+                else:
+                    raise KeyError("relays")
+                if type(nostrRelays) is not list:
+                    raise TypeError("'relays' is not a string")
+
+                if "nostr" in pool and "privkey" in pool["nostr"]:
+                    nostrPrivKey = pool["nostr"]["privkey"]
+                elif globalSettings.nostrPrivKey:
+                    nostrPrivKey = globalSettings.nostrPrivKey
+                else:
+                    raise KeyError("privkey")
+                if type(nostrPrivKey) is not str:
+                    raise TypeError("'privkey' is not a string")
+            else:
+                nostrRelays = None
+                nostrPrivKey = None
+
         except (KeyError, TypeError) as e:
             errorMessage = "Missing or invalid parameter in configuration file: %s" % e
             logging.error(errorMessage)
@@ -779,7 +827,9 @@ def getConfiguration():
                 matrixServer=matrixServer,
                 matrixRooms=generatedMatrixRooms,
                 matrixSecPath=matrixSecPath,
-                matrixDevId=matrixDevId
+                matrixDevId=matrixDevId,
+                nostrRelays=nostrRelays,
+                nostrPrivKey=nostrPrivKey,
             )
         )
 
