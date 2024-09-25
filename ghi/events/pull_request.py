@@ -4,6 +4,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../")
 import github
+import ghapi
 from irc import Colors
 from util import matrix_html
 
@@ -21,6 +22,8 @@ def PullRequest(payload, shorten):
     if action in ["opened", "closed", "reopened"]:
         if action == "closed" and payload["pull_request"]["merged"]:
             action = "merged"
+
+        socials = ghapi.get_socials(payload["sender"]["login"])
 
         ircMessage = (
             "[{light_purple}{repo}{reset}] {gray}{user}{reset} {bold}{action}{reset} pull request {bold}#{number}{reset}:"
@@ -55,8 +58,9 @@ def PullRequest(payload, shorten):
         )
 
         nostrMessage = (
-                "[{repo}] {action} PR from {user}: {title} {url}"
+                "[{repo}] {action} PR from {user}{userinfo}: {title} {url}"
         ).format(
+            userinfo = f" (nostr:{socials['nostr']})" if socials['nostr'] is not None else "",
             repo   = payload["pull_request"]["base"]["repo"]["name"],
             action = action.capitalize(),
             user   = payload["pull_request"]["user"]["login"],

@@ -10,6 +10,7 @@ try:
 except ImportError:
     pass
 
+from nostrutil import embeds_to_tags
 
 def sendMessages(pool, messages):
     error = False
@@ -21,7 +22,7 @@ def sendMessages(pool, messages):
             'pubkey': public_key,
             'created_at': int(time.time()),
             'kind': 1,
-            'tags': [],
+            'tags': embeds_to_tags(content),
             'content': content,
         }
 
