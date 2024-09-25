@@ -18,11 +18,12 @@ def sendMessages(pool, messages):
     public_key = sk.pubkey.serialize()[1:].hex()
 
     for content in messages:
+        tags, relays = embeds_to_tags(content)
         event = {
             'pubkey': public_key,
             'created_at': int(time.time()),
             'kind': 1,
-            'tags': embeds_to_tags(content),
+            'tags': tags,
             'content': content,
         }
 
@@ -35,8 +36,12 @@ def sendMessages(pool, messages):
 
         message = json.dumps(['EVENT', event])
 
+        # add our own configured relays, in addition to pinged user's relays
+        relays.update(pool.nostrRelays)
+
         # send to all relays
-        for url in pool.nostrRelays:
+        logging.info(f"Nostr - notifying relays {','.join(relays)}")
+        for url in relays:
             try:
                 relay = websocket.create_connection(url)
                 relay.send(message)
