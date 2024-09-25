@@ -15,9 +15,6 @@ def parse_tlv(data):
                 rv[t] = []
             rv[t].append(data[ptr + 2:ptr + 2 + l])
             ptr += 2 + l
-            if ptr == (len(data) - 1) and data[-1] == 0x00:
-                # padding
-                break
         return rv
     except IndexError:
         return None
@@ -34,7 +31,7 @@ def embeds_to_tags(content):
         (hrp, data, spec) = bech32.bech32_decode(embed, 1000)
         if hrp is None or data is None or spec is None:
             continue # no valid bech32
-        data = bytes(bech32.convertbits(data, 5, 8))
+        data = bytes(bech32.convertbits(data, 5, 8, False))
 
         if hrp == 'nprofile':
             tlv = parse_tlv(data)
@@ -49,7 +46,7 @@ def embeds_to_tags(content):
 
             relays_out.update(relays)
         elif hrp == 'npub':
-            if len(data) != 33: # 32 bytes + ?
+            if len(data) != 32:
                 continue
             tags.append(['p', data[:-1].hex()])
 
