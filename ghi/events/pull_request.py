@@ -23,7 +23,8 @@ def PullRequest(payload, shorten):
         if action == "closed" and payload["pull_request"]["merged"]:
             action = "merged"
 
-        socials = ghapi.get_socials(payload["sender"]["login"])
+        # get socials for the user whose PR was merged
+        socials = ghapi.get_socials(payload["pull_request"]["user"]["login"])
 
         ircMessage = (
             "[{light_purple}{repo}{reset}] {gray}{user}{reset} {bold}{action}{reset} pull request {bold}#{number}{reset}:"
