@@ -48,7 +48,7 @@ def embeds_to_tags(content):
         elif hrp == 'npub':
             if len(data) != 32:
                 continue
-            tags.append(['p', data[:-1].hex()])
+            tags.append(['p', data.hex()])
 
     return tags, relays_out
 
